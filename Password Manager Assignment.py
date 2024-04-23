@@ -1,5 +1,9 @@
 from tkinter import *
 import customtkinter
+import random 
+import string
+import pyperclip
+from tkinter import messagebox
 
 
 MASTER_PASSWORD_FILE = "master_password.txt"
@@ -7,7 +11,62 @@ LOGIN_INFO_FILE = "login_info.txt"
 
 def main_application_window():
 
+    password_generator_added = False
     login_fields_added = False  # Initialize the flag in the outer function scope
+
+    def generate_password():
+        password_length = int(length_entry.get())
+
+        password_chars = string.ascii_letters
+        if include_numbers.get():
+            password_chars += string.digits
+        if include_special_chars.get():
+            password_chars += string.punctuation
+
+        password = ''.join(random.choice(password_chars) for i in range(password_length))
+
+        password_label.configure(text=password)
+
+    def copy_password():
+        password = password_label.cget('text')
+        pyperclip.copy(password)
+        messagebox.showinfo('Password Copied', 'The password has been copied to the clipboard')
+
+    def generate_password_gui():
+        nonlocal password_generator_added
+        
+        if not password_generator_added:
+            global length_entry, include_numbers, include_special_chars, password_label 
+            
+            password_gen_frame = Frame(main_window, bg=main_window.cget('bg'))
+            password_gen_frame.pack(pady=10, padx=100)
+
+            
+
+            length_label = customtkinter.CTkLabel(password_gen_frame, text="Password length:", text_color='white')
+            length_label.pack()
+
+            length_entry = customtkinter.CTkEntry(password_gen_frame)
+            length_entry.pack(pady=10)
+
+            include_numbers = BooleanVar()
+            number_check = customtkinter.CTkCheckBox(password_gen_frame, text="Include numbers", text_color='white', variable=include_numbers)
+            number_check.pack(pady=10)
+
+            include_special_chars = BooleanVar()
+            special_check = customtkinter.CTkCheckBox(password_gen_frame, text="Include special characters", text_color='white', variable=include_special_chars)
+            special_check.pack(pady=10)
+
+            generate_button = customtkinter.CTkButton(password_gen_frame, text="Generate Password", command=generate_password, fg_color='#E97451')
+            generate_button.pack(pady=10)
+
+            password_label = customtkinter.CTkLabel(password_gen_frame, text="")
+            password_label.pack(pady=10)
+
+            copy_button = customtkinter.CTkButton(password_gen_frame, text="Copy Password", command=copy_password, fg_color='#E97451')
+            copy_button.pack(pady=10)
+
+            password_generator_added = True
 
     def add_login_fields():
         nonlocal login_fields_added  # Use nonlocal to access and modify the variable from the outer scope
@@ -42,6 +101,11 @@ def main_application_window():
                     password_entry.configure(show='•')
                 else:
                     password_entry.configure(show='')
+            
+            def clear_entry_fields():
+                site_entry.delete(0, 'end')
+                username_entry.delete(0, 'end')
+                password_entry.delete(0, 'end')
 
             show_hide_button = customtkinter.CTkButton(login_fields_frame, text="Show/Hide", command=toggle_password_visibility, fg_color='#E97451')
             show_hide_button.grid(row=2, column=2, padx=1, pady=5)
@@ -56,7 +120,7 @@ def main_application_window():
                     if not is_login_saved(site, username, password):  # Check if login info is already saved
                         save_login(site, username, password)  # Save login info
                         feedback_label.configure(text="Login information saved", fg_color="green", corner_radius=8)
-                        save_button.configure(state=DISABLED)  # Disable the button after saving
+                        
                     else:
                         feedback_label.configure(text="Login information already saved", fg_color="red", corner_radius=8)
                 else:
@@ -80,13 +144,19 @@ def main_application_window():
 
         # Create the feedback label inside the login frame
         feedback_label = customtkinter.CTkLabel(login_frame, text="")
-        feedback_label.grid(row=4, columnspan=2, pady=10)
+        feedback_label.pack(pady=5)
+
+        clear_button = customtkinter.CTkButton(login_fields_frame, text="Clear", command=clear_entry_fields, fg_color='#E97451')
+        clear_button.grid(row=3, column=2, pady=10)
+
 
         login_fields_added = True  # Update the flag to indicate login fields have been added
 
+
+
     main_window = customtkinter.CTk()
     main_window.title('Main Application')
-    main_window.geometry('1400x600')
+    main_window.geometry('1400x800')
     customtkinter.set_appearance_mode("dark")
 
     main_application_label = customtkinter.CTkLabel(main_window, text='Main Application', text_color='white')
@@ -99,8 +169,8 @@ def main_application_window():
     add_login = customtkinter.CTkButton(button_frame, text='Add login', fg_color='#E97451', corner_radius=5, command=add_login_fields)
     add_login.pack(side="left", padx=180)
 
-    generate_password = customtkinter.CTkButton(button_frame, text='Generate password', fg_color='#E97451', corner_radius=5)
-    generate_password.pack(side="left", padx=100)
+    password_generator = customtkinter.CTkButton(button_frame, text='Generate password', fg_color='#E97451', corner_radius=5, command = generate_password_gui)
+    password_generator.pack(side="left", padx=100)
 
     view_account = customtkinter.CTkButton(button_frame, text='View Accounts', fg_color='#E97451', corner_radius=5)
     view_account.pack(side="left", padx=180)
