@@ -6,37 +6,67 @@ import pyperclip
 from tkinter import messagebox
 from PIL import ImageTk, Image
 import os
+import time 
 
 #Loading Images
 file_path = os.path.dirname(os.path.realpath(__file__))
 eye_image = customtkinter.CTkImage(Image.open(file_path +
-                                              "/redness.png"), size =(35, 35))
+                                              "/eye open.png"), size =(35, 35))
 
 logo_image = customtkinter.CTkImage(Image.open(file_path +
                                               "/image.png"), size =(35, 35))
 
 copy_image = customtkinter.CTkImage(Image.open(file_path +
-                                              "/copy.png"), size =(35, 35))
+                                              "/copy 2.png"), size =(35, 35))
 
 
 MASTER_PASSWORD_FILE = "master_password.txt"
 LOGIN_INFO_FILE = "login_info.txt"
+LOGIN_INFO_DIR = "logins"
 
 
+
+if not os.path.exists(LOGIN_INFO_DIR):
+    os.makedirs(LOGIN_INFO_DIR)
+
+# Global variables to hold references to widgets
+main_application_window = None
+accounts_frame = None
+accounts_label = None
+login_details_label = None
+back_button = None
+
+def generate_filename(site, username):
+    timestamp = int(time.time())
+    filename = f"{site}_{username}_{timestamp}.txt"
+    return os.path.join(LOGIN_INFO_DIR, filename)
 
 def create_main_window():
     root = customtkinter.CTk()
 
-    root.title('Create Password')
-    root.geometry('900x700')
+    root.title('Sign Up Page')
+    root.after(0, lambda:root.state('zoomed'))
 
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme('blue')
 
-    instruction_label = customtkinter.CTkLabel(root, text="Please create your Master Password")
-    instruction_label.pack()
+    logo_image = customtkinter.CTkImage(Image.open(file_path + "/image.png"), size=(140, 140))
+        
+    logo_label = customtkinter.CTkLabel(root, image=logo_image, text='')
+    logo_label.place(relx=0.5, rely=0.1, anchor='center')  
+
+    main_application_label = customtkinter.CTkLabel(root, text='VAULT GUARD', text_color='white',
+                                                    font=('Arial', 48))
+    main_application_label.place(relx=0.5, rely=0.2, anchor='center')
+
+    instruction_label = customtkinter.CTkLabel(root, text="Sign Up", font=('arial', 28, 'bold'))
+    instruction_label.place(anchor='c', relx=0.5, rely=0.29)
+
+    instruction_label2 = customtkinter.CTkLabel(root, text="Create an account by entering your username and chosen password", font=('arial', 18))
+    instruction_label2.place(anchor='c', relx=0.5, rely=0.33)
 
     def check_passwords():
+        username = username_entry.get()  # Get the username from the entry widget
         password1 = entry_1.get()
         password2 = entry_2.get()
         if len(password1) < 8 or len(password2) < 8:
@@ -45,11 +75,18 @@ def create_main_window():
             feedback_label.configure(text="Accepted", fg_color="green", corner_radius=8)
             # Save master password
             save_master_password(password1)
+            # Save username
+            save_username(username)  # Call function to save username
             # Once passwords are accepted, open the blank window
             root.destroy()
             main_application_window()
         else:
             feedback_label.configure(text="Passwords Do Not Match", fg_color="red", corner_radius=8)
+
+    def save_username(username):
+        with open("username.txt", "w") as file:  # Create or overwrite a file to save the username
+            file.write(username)
+
 
     def toggle_password_visibility(entry):
         if entry.cget('show') == '':
@@ -57,35 +94,39 @@ def create_main_window():
         else:
             entry.configure(show='')
 
-    entry_1_frame = Frame(root, bg=root.cget('bg')) #bg=root.cget('bg') <-- add this later to make the background transparent 
-    entry_1_frame.pack(pady=30)
+    username_frame = customtkinter.CTkFrame(root)
+    username_frame.place(anchor='c', relx=0.5, rely=0.45)
 
-    choose_password_label = customtkinter.CTkLabel(entry_1_frame, text="Choose Password:")
-    choose_password_label.pack(side=LEFT, padx=(0, 10))
+    choose_username = customtkinter.CTkLabel(username_frame, text="Username:", font = ('Arial', 18))
+    choose_username.grid(row=0, column=0, padx=20, pady=10)
 
-    entry_1 = customtkinter.CTkEntry(entry_1_frame, width=150, height=20, show='•')  # Initially hide the password
-    entry_1.pack(side=LEFT)
+    username_entry = customtkinter.CTkEntry(username_frame, width=200, height=30) 
+    username_entry.grid(row=0, column=1, padx=5, pady=10)
+    
 
-    toggle_button_1 = customtkinter.CTkButton(entry_1_frame, image = eye_image, text="", command=lambda: toggle_password_visibility(entry_1), fg_color='#E97451')
-    toggle_button_1.pack(side=LEFT)
+    choose_password_label = customtkinter.CTkLabel(username_frame, text="Choose Password:", font = ('Arial', 18))
+    choose_password_label.grid(row=1, column=0, padx=20, pady=10)
 
-    entry_2_frame = Frame(root, bg=root.cget('bg')) #bg=root.cget('bg') <-- add this later to make the background transparent
-    entry_2_frame.pack(pady=30)
+    entry_1 = customtkinter.CTkEntry(username_frame, width=200, height=30, show='•')  # Initially hide the password
+    entry_1.grid(row=1, column=1, padx=20, pady=10)
 
-    confirm_password_label = customtkinter.CTkLabel(entry_2_frame, text="Confirm Password:")
-    confirm_password_label.pack(side=LEFT, padx=(0, 10))
+    toggle_button_1 = customtkinter.CTkButton(username_frame, image = eye_image, text="", command=lambda: toggle_password_visibility(entry_1), fg_color='#E97451')
+    toggle_button_1.grid(row=1, column=2, padx=20, pady=10)
 
-    entry_2 = customtkinter.CTkEntry(entry_2_frame, width=150, height=20, show='•')  # Initially hide the password
-    entry_2.pack(side=LEFT)
+    confirm_password_label = customtkinter.CTkLabel(username_frame, text="Confirm Password:", font = ('Arial', 18))
+    confirm_password_label.grid(row=2, column=0, padx=20, pady=10)
 
-    toggle_button_2 = customtkinter.CTkButton(entry_2_frame, image = eye_image, text="", command=lambda: toggle_password_visibility(entry_2), fg_color='#E97451')
-    toggle_button_2.pack(side=LEFT)
+    entry_2 = customtkinter.CTkEntry(username_frame, width=200, height=30, show='•')  # Initially hide the password
+    entry_2.grid(row=2, column=1, padx=20, pady=10)
 
-    checkbutton = customtkinter.CTkButton(root, text="Check", command=check_passwords, fg_color='#E97451')
-    checkbutton.pack(pady=10)
+    toggle_button_2 = customtkinter.CTkButton(username_frame, image = eye_image, text="", command=lambda: toggle_password_visibility(entry_2), fg_color='#E97451')
+    toggle_button_2.grid(row=2, column=2, padx=20, pady=10)
 
-    feedback_label = customtkinter.CTkLabel(root, text="")
-    feedback_label.pack(pady=5)
+    checkbutton = customtkinter.CTkButton(root, text="Check", command=check_passwords, fg_color='#E97451', font = ('Arial', 18))
+    checkbutton.place(anchor='c', relx=0.5, rely=0.58)
+
+    feedback_label = customtkinter.CTkLabel(root, text="", font=('arial', 18))
+    feedback_label.place(anchor='c', relx=0.5, rely=0.63)
 
     root.mainloop()
 
@@ -93,9 +134,9 @@ def create_main_window():
 def main_application_window():
     # Loading Images
     file_path = os.path.dirname(os.path.realpath(__file__))
-    eye_image = customtkinter.CTkImage(Image.open(file_path + "/redness.png"), size=(35, 35))
-    logo_image = customtkinter.CTkImage(Image.open(file_path + "/image.png"), size=(140, 140))
-    copy_image = customtkinter.CTkImage(Image.open(file_path + "/copy.png"), size=(35, 35))
+    eye_image = customtkinter.CTkImage(Image.open(file_path + "/eye open.png"), size=(35, 35))
+    logo_image = customtkinter.CTkImage(Image.open(file_path + "/image.png"), size=(130, 130))
+    copy_image = customtkinter.CTkImage(Image.open(file_path + "/copy 2.png"), size=(35, 35))
 
     password_generator_added = False
     login_fields_added = False  
@@ -125,7 +166,7 @@ def main_application_window():
             global length_entry, include_numbers, include_special_chars, password_label
 
             password_gen_frame = customtkinter.CTkFrame(main_window)  
-            password_gen_frame.place(relx=0.5, rely=0.5, anchor='center')
+            password_gen_frame.place(relx=0.5, rely=0.54, anchor='center')
             
 
             length_label = customtkinter.CTkLabel(password_gen_frame, text="Password length:", text_color='white', font=('Arial', 14, 'bold'))
@@ -157,6 +198,63 @@ def main_application_window():
 
             password_generator_added = True
 
+    
+    def view_accounts():
+        global accounts_frame, accounts_label
+        
+        # Clear any existing widgets in main_application_window
+        if accounts_frame:
+            accounts_frame.pack_forget()
+        if accounts_label:
+            accounts_label.pack_forget()
+
+        accounts_frame = customtkinter.CTkFrame(main_window)
+        accounts_frame.place(relx=0.73, rely=0.45, anchor='center')
+
+        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Saved Logins", font=("Helvetica", 16))
+        accounts_label.pack(padx=10, pady=40)
+
+        try:
+            for filename in os.listdir(LOGIN_INFO_DIR):
+                with open(os.path.join(LOGIN_INFO_DIR, filename), "r") as file:
+                    content = file.read()
+                    site_name = content.split("\n")[0].split(": ")[1]
+                    site_label = customtkinter.CTkLabel(accounts_frame, text=site_name, font=("Arial", 12), fg_color="blue", cursor="hand2")
+                    site_label.pack(anchor=W, padx=20)
+                    site_label.bind("<Button-1>", lambda event, site_name=site_name: show_login_details(site_name))
+
+        except FileNotFoundError:
+            pass  # No login info files yet
+
+    def show_login_details(site_text):
+        global login_details_label, back_button
+        
+        # Clear any existing widgets in accounts_frame
+        if login_details_label:
+            login_details_label.pack_forget()
+        if back_button:
+            back_button.pack_forget()
+
+        accounts_frame = customtkinter.CTkFrame(main_window)
+        accounts_frame.pack(pady=20)
+
+        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Login Details", font=("Helvetica", 16))
+        accounts_label.pack()
+
+        # Find the matching login file
+        for filename in os.listdir(LOGIN_INFO_DIR):
+            with open(os.path.join(LOGIN_INFO_DIR, filename), "r") as file:
+                content = file.read()
+                if f"Site: {site_text}" in content:
+                    login_details_label = customtkinter.CTkLabel(accounts_frame, text=content, justify=LEFT)
+                    login_details_label.pack(anchor=W, padx=20)
+
+                    # Back button to return to initial view
+                    back_button = customtkinter.CTkButton(accounts_frame, text="Back", command=view_accounts)
+                    back_button.pack(pady=10)
+                    break
+
+
     def add_login_fields():
         nonlocal login_fields_added
         if not login_fields_added:
@@ -164,7 +262,7 @@ def main_application_window():
 
             # Create the actual frame inside the border frame
             login_fields_frame = customtkinter.CTkFrame(main_window, width=450, height=80)  
-            login_fields_frame.place(relx=0.27, rely=0.435, anchor='center')
+            login_fields_frame.place(relx=0.23, rely=0.45, anchor='center')
         
             site_label = customtkinter.CTkLabel(login_fields_frame, text="Site:", text_color='white', font=('Arial', 14, 'bold'))
             site_label.grid(row=0, column=0)
@@ -207,22 +305,20 @@ def main_application_window():
                     if not is_login_saved(site, username, password):
                         save_login(site, username, password)  
                         feedback_label.configure(text="Login information saved", fg_color="green", corner_radius=8)
-
                     else:
-                        feedback_label.configure(text="Login information already saved", fg_color="red",
-                                                 corner_radius=8)
+                        feedback_label.configure(text="Login information already saved", fg_color="red", corner_radius=8)
                 else:
                     feedback_label.configure(text="Please fill in all fields", fg_color="red", corner_radius=8)
 
             def is_login_saved(site, username, password):
                 try:
-                    with open(LOGIN_INFO_FILE, "r") as file:
-                        for line in file:
-                            if f"Site: {site}, Username/email: {username}, Password: {password}" in line:
+                    for filename in os.listdir(LOGIN_INFO_DIR):
+                        with open(os.path.join(LOGIN_INFO_DIR, filename), "r") as file:
+                            content = file.read()
+                            if f"Site: {site}\nUsername/email: {username}\nPassword: {password}" in content:
                                 return True
                 except FileNotFoundError:
-                    with open(LOGIN_INFO_FILE, "w"):
-                        pass  
+                    os.makedirs(LOGIN_INFO_DIR)
                 return False
 
             save_button = customtkinter.CTkButton(login_fields_frame, text="Save", font=('Arial', 14, 'bold'), command=save_login_info,
@@ -262,7 +358,7 @@ def main_application_window():
     password_generator.grid(row=0, column=1, padx=100)
 
     view_account = customtkinter.CTkButton(button_frame, text='View Accounts', fg_color='#E97451',
-                                        corner_radius=5, font=('Arial', 18))
+                                        corner_radius=5, font=('Arial', 18), command=view_accounts)
     view_account.grid(row=0, column=2, padx=180)
 
     feedback_label = customtkinter.CTkLabel(main_window, text="")
@@ -282,8 +378,9 @@ def load_master_password():
         return None
 
 def save_login(site, username, password):
-    with open(LOGIN_INFO_FILE, "a") as file:
-        file.write(f"Site: {site}, Username/email: {username}, Password: {password}\n")
+    filename = generate_filename(site, username)
+    with open(filename, "w") as file:
+        file.write(f"Site: {site}\nUsername/email: {username}\nPassword: {password}\n")
 
 def create_new_page(root):
     # Clear existing widgets
@@ -312,6 +409,13 @@ def toggle_password_visibility(entry):
     else:
         entry.configure(show='')
 
+def load_username():
+    try:
+        with open("username.txt", "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return "User"  # Default value if the file does not exist or username is not found
+
 # Check if a master password exists
 master_password = load_master_password()
 if master_password:
@@ -321,7 +425,10 @@ if master_password:
     login_window.after(0, lambda:login_window.state('zoomed'))
     customtkinter.set_appearance_mode("dark")
 
-    text_label = customtkinter.CTkLabel(login_window, text='Welcome Back!', text_color='white', font=('Arial', 38, 'bold'))
+    # Load the username from the file
+    username = load_username()
+
+    text_label = customtkinter.CTkLabel(login_window, text= f"Welcome Back, {username}!", text_color='white', font=('Arial', 38, 'bold'))
     text_label.place(anchor = 'c', relx=0.5, rely =0.3)
 
     login_frame = customtkinter.CTkFrame(login_window)
@@ -336,10 +443,10 @@ if master_password:
     entry_password = customtkinter.CTkEntry(login_frame, show='•', width = 300)
     entry_password.grid(row=3, column=1, pady=5)
 
-    toggle_button_login = customtkinter.CTkButton(login_frame, image=eye_image, text="", command=lambda: toggle_password_visibility(entry_password), fg_color='#E97451')
+    toggle_button_login = customtkinter.CTkButton(login_frame, image=eye_image, text="", command=lambda: toggle_password_visibility(entry_password), fg_color='#5D3FD3')
     toggle_button_login.grid(row=3, column=2, padx=5, pady=5)
 
-    button_login = customtkinter.CTkButton(login_frame, text="Login", command=login, fg_color='#E97451', font=('Arial', 14, 'bold'))
+    button_login = customtkinter.CTkButton(login_frame, text="Login", command=login, fg_color='#5D3FD3', font=('Arial', 14, 'bold'))
     button_login.grid(row=4, column=1)
 
     feedback_label_login = customtkinter.CTkLabel(login_frame, text="", font=('Arial', 14, 'bold'))
