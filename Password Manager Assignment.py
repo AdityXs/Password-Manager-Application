@@ -55,7 +55,7 @@ def create_main_window():
     logo_label = customtkinter.CTkLabel(root, image=logo_image, text='')
     logo_label.place(relx=0.5, rely=0.1, anchor='center')  
 
-    main_application_label = customtkinter.CTkLabel(root, text='VAULT GUARD', text_color='white',
+    main_application_label = customtkinter.CTkLabel(root, text=f"Welcome, {username}!", text_color='white',
                                                     font=('Arial', 48))
     main_application_label.place(relx=0.5, rely=0.2, anchor='center')
 
@@ -202,43 +202,39 @@ def main_application_window():
     def view_accounts():
         global accounts_frame, accounts_label
         
-        # Clear any existing widgets in main_application_window
+        # Destroy previous accounts_frame if exists
         if accounts_frame:
-            accounts_frame.pack_forget()
-        if accounts_label:
-            accounts_label.pack_forget()
+            accounts_frame.destroy()
 
         accounts_frame = customtkinter.CTkFrame(main_window)
-        accounts_frame.place(relx=0.73, rely=0.45, anchor='center')
+        accounts_frame.place(relx=0.68, rely=0.35)
 
-        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Saved Logins", font=("Helvetica", 16))
-        accounts_label.pack(padx=10, pady=40)
+        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Saved Logins", font=("Arial", 16, 'bold'))
+        accounts_label.pack()
 
         try:
             for filename in os.listdir(LOGIN_INFO_DIR):
                 with open(os.path.join(LOGIN_INFO_DIR, filename), "r") as file:
                     content = file.read()
                     site_name = content.split("\n")[0].split(": ")[1]
-                    site_label = customtkinter.CTkLabel(accounts_frame, text=site_name, font=("Arial", 12), fg_color="blue", cursor="hand2")
-                    site_label.pack(anchor=W, padx=20)
+                    site_label = customtkinter.CTkButton(accounts_frame, text=site_name, font=("Arial", 12, 'bold'), fg_color="#E97451", cursor="hand2")
+                    site_label.pack(anchor=W, padx=20, pady=3)
                     site_label.bind("<Button-1>", lambda event, site_name=site_name: show_login_details(site_name))
 
         except FileNotFoundError:
             pass  # No login info files yet
 
     def show_login_details(site_text):
-        global login_details_label, back_button
+        global accounts_frame, login_details_label, back_button
         
-        # Clear any existing widgets in accounts_frame
-        if login_details_label:
-            login_details_label.pack_forget()
-        if back_button:
-            back_button.pack_forget()
+        # Destroy previous accounts_frame if exists
+        if accounts_frame:
+            accounts_frame.destroy()
 
         accounts_frame = customtkinter.CTkFrame(main_window)
-        accounts_frame.pack(pady=20)
+        accounts_frame.place(relx=0.68, rely=0.35)
 
-        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Login Details", font=("Helvetica", 16))
+        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Login Details", font=("Arial", 16))
         accounts_label.pack()
 
         # Find the matching login file
@@ -250,10 +246,15 @@ def main_application_window():
                     login_details_label.pack(anchor=W, padx=20)
 
                     # Back button to return to initial view
-                    back_button = customtkinter.CTkButton(accounts_frame, text="Back", command=view_accounts)
+                    back_button = customtkinter.CTkButton(accounts_frame, text="Back", command=back_to_accounts)
                     back_button.pack(pady=10)
                     break
 
+    def back_to_accounts():
+        global accounts_frame
+        if accounts_frame:
+            accounts_frame.destroy()
+        view_accounts()
 
     def add_login_fields():
         nonlocal login_fields_added
@@ -342,12 +343,16 @@ def main_application_window():
     logo_label = customtkinter.CTkLabel(main_window, image=logo_image, text='')
     logo_label.place(relx=0.5, rely=0.1, anchor='center')  
 
-    main_application_label = customtkinter.CTkLabel(main_window, text='VAULT GUARD', text_color='white',
+    main_application_label = customtkinter.CTkLabel(main_window, text= "VAULT GAURD", text_color='white',
                                                     font=('Arial', 48))
     main_application_label.place(relx=0.5, rely=0.2, anchor='center')
 
+    main_application_label2 = customtkinter.CTkLabel(main_window, text= f"Welcome {username}!", text_color='white',
+                                                    font=('Arial', 48))
+    main_application_label2.place(relx=0.5, rely=0.25, anchor='center')
+
     button_frame = Frame(main_window, bg= main_window.cget('bg'))  
-    button_frame.place(relx=0.5, rely=0.3, anchor='center')
+    button_frame.place(relx=0.5, rely=0.33, anchor='center')
 
     add_login = customtkinter.CTkButton(button_frame, text='Add Login', fg_color='#E97451', corner_radius=5,
                                         command=add_login_fields, font=('Arial', 18))
