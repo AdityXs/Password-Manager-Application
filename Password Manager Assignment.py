@@ -1,8 +1,8 @@
 from tkinter import *
 import customtkinter
 import random 
-import string
-import pyperclip
+import string 
+import pyperclip 
 from tkinter import messagebox
 from PIL import ImageTk, Image
 import os
@@ -55,9 +55,8 @@ def create_main_window():
     logo_label = customtkinter.CTkLabel(root, image=logo_image, text='')
     logo_label.place(relx=0.5, rely=0.1, anchor='center')  
 
-    main_application_label = customtkinter.CTkLabel(root, text=f"Welcome, {username}!", text_color='white',
-                                                    font=('Arial', 48))
-    main_application_label.place(relx=0.5, rely=0.2, anchor='center')
+    name_label = customtkinter.CTkLabel(root, text="VAULT GAURD", font=('arial', 48, 'bold'))
+    name_label.place(anchor='c', relx=0.5, rely=0.2)
 
     instruction_label = customtkinter.CTkLabel(root, text="Sign Up", font=('arial', 28, 'bold'))
     instruction_label.place(anchor='c', relx=0.5, rely=0.29)
@@ -93,16 +92,28 @@ def create_main_window():
             entry.configure(show='•')
         else:
             entry.configure(show='')
+    
+    def limit_entry_length(entry_widget, max_length):
+        def check_length(event):
+            current_text = entry_widget.get()
+            if len(current_text) > max_length:
+                entry_widget.delete(max_length, len(current_text))
+        return check_length
+
+    max_length = 28
 
     username_frame = customtkinter.CTkFrame(root)
     username_frame.place(anchor='c', relx=0.5, rely=0.45)
 
-    choose_username = customtkinter.CTkLabel(username_frame, text="Username:", font = ('Arial', 18))
+    choose_username = customtkinter.CTkLabel(username_frame, text="Username:", font=('Arial', 18))
     choose_username.grid(row=0, column=0, padx=20, pady=10)
 
-    username_entry = customtkinter.CTkEntry(username_frame, width=200, height=30) 
+    username_entry = customtkinter.CTkEntry(username_frame, width=200, height=30)
     username_entry.grid(row=0, column=1, padx=5, pady=10)
-    
+
+    # Bind the entry widget to limit the length of input
+    username_entry.bind("<KeyRelease>", limit_entry_length(username_entry, max_length))
+        
 
     choose_password_label = customtkinter.CTkLabel(username_frame, text="Choose Password:", font = ('Arial', 18))
     choose_password_label.grid(row=1, column=0, padx=20, pady=10)
@@ -201,14 +212,50 @@ def main_application_window():
     
     def view_accounts():
         global accounts_frame, accounts_label
-        
-        # Destroy previous accounts_frame if exists
+
+        # Destroy previous accounts_frame if it exists
         if accounts_frame:
             accounts_frame.destroy()
 
-        accounts_frame = customtkinter.CTkFrame(main_window)
-        accounts_frame.place(relx=0.68, rely=0.35)
+        # Get the background color of the main application window
+        app_bg_color = main_window.cget("bg")
 
+        # Create a canvas and a scrollbar
+        accounts_canvas = customtkinter.CTkCanvas(main_window, bg=app_bg_color, width=400, height=300)
+        accounts_canvas.place(relx=0.68, rely=0.35, anchor='nw')
+
+        scrollbar = Scrollbar(main_window, command=accounts_canvas.yview)
+        scrollbar.place(relx=0.88, rely=0.35, anchor='nw', height=300)  # Adjust the height to match the canvas
+
+        # Configure the canvas to use the scrollbar
+        accounts_canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Create a frame inside the canvas
+        accounts_frame = customtkinter.CTkFrame(accounts_canvas, width=400, height=300)
+        accounts_canvas.create_window((0, 0), window=accounts_frame, anchor='nw', tags="frame_window")
+
+        def on_canvas_configure(event):
+            # Adjust the frame width to match the canvas width
+            canvas_width = event.width
+            accounts_canvas.itemconfig("frame_window", width=canvas_width)
+            accounts_canvas.config(scrollregion=accounts_canvas.bbox("all"))
+
+        accounts_canvas.bind("<Configure>", on_canvas_configure)
+
+
+        # Create a frame inside the canvas
+        accounts_frame = customtkinter.CTkFrame(accounts_canvas, width=400)
+        accounts_canvas.create_window((0, 0), window=accounts_frame, anchor='nw', tags="frame_window")
+
+        def on_canvas_configure(event):
+            # Adjust the frame width to match the canvas width
+            canvas_width = event.width
+            accounts_canvas.itemconfig("frame_window", width=canvas_width)
+            accounts_canvas.config(scrollregion=accounts_canvas.bbox("all"))
+
+        accounts_canvas.bind("<Configure>", on_canvas_configure)
+
+        # Add the accounts_label to the frame
         accounts_label = customtkinter.CTkLabel(accounts_frame, text="Saved Logins", font=("Arial", 16, 'bold'))
         accounts_label.pack()
 
@@ -223,6 +270,10 @@ def main_application_window():
 
         except FileNotFoundError:
             pass  # No login info files yet
+
+        # Update the scroll region
+        accounts_frame.update_idletasks()
+        accounts_canvas.config(scrollregion=accounts_canvas.bbox("all"))
 
     def show_login_details(site_text):
         global accounts_frame, login_details_label, back_button
@@ -261,6 +312,12 @@ def main_application_window():
         if not login_fields_added:
 
 
+            # Validation function to limit input length
+            def limit_size_input(input_str):
+                return len(input_str) <= 28
+
+            vcmd = (main_window.register(lambda input_str: limit_size_input(input_str)), '%P')
+
             # Create the actual frame inside the border frame
             login_fields_frame = customtkinter.CTkFrame(main_window, width=450, height=80)  
             login_fields_frame.place(relx=0.23, rely=0.45, anchor='center')
@@ -268,21 +325,22 @@ def main_application_window():
             site_label = customtkinter.CTkLabel(login_fields_frame, text="Site:", text_color='white', font=('Arial', 14, 'bold'))
             site_label.grid(row=0, column=0)
 
-            site_entry = customtkinter.CTkEntry(login_fields_frame, width = 250)
+            site_entry = customtkinter.CTkEntry(login_fields_frame, width = 250, validate='key', validatecommand=vcmd)
             site_entry.grid(row=0, column=1, padx=10, pady=10)
 
             username_label = customtkinter.CTkLabel(login_fields_frame, text="Username/email:", text_color='white', font=('Arial', 14, 'bold'))
             username_label.grid(row=1, column=0, padx=10)
 
-            username_entry = customtkinter.CTkEntry(login_fields_frame, width = 250)
+            username_entry = customtkinter.CTkEntry(login_fields_frame, width = 250, validate='key', validatecommand=vcmd)
             username_entry.grid(row=1, column=1, padx=10, pady=5)
 
             password_label = customtkinter.CTkLabel(login_fields_frame, text="Password:", text_color='white', font=('Arial', 14, 'bold'))
             password_label.grid(row=2, column=0)
 
-            password_entry = customtkinter.CTkEntry(login_fields_frame, show='•', width = 250)
+            password_entry = customtkinter.CTkEntry(login_fields_frame, show='•', width = 250, validate='key', validatecommand=vcmd)
             password_entry.grid(row=2, column=1, padx=10, pady=5)
-
+            
+        
             def toggle_password_visibility():
                 if password_entry.cget('show') == '':
                     password_entry.configure(show='•')
@@ -346,10 +404,6 @@ def main_application_window():
     main_application_label = customtkinter.CTkLabel(main_window, text= "VAULT GAURD", text_color='white',
                                                     font=('Arial', 48))
     main_application_label.place(relx=0.5, rely=0.2, anchor='center')
-
-    main_application_label2 = customtkinter.CTkLabel(main_window, text= f"Welcome {username}!", text_color='white',
-                                                    font=('Arial', 48))
-    main_application_label2.place(relx=0.5, rely=0.25, anchor='center')
 
     button_frame = Frame(main_window, bg= main_window.cget('bg'))  
     button_frame.place(relx=0.5, rely=0.33, anchor='center')
