@@ -45,7 +45,7 @@ def create_main_window():
     root = customtkinter.CTk()
 
     root.title('Sign Up Page')
-    root.after(0, lambda:root.state('zoomed'))
+    root.after(0, lambda: root.state('zoomed'))
 
     customtkinter.set_appearance_mode("dark")
     customtkinter.set_default_color_theme('blue')
@@ -76,16 +76,15 @@ def create_main_window():
             save_master_password(password1)
             # Save username
             save_username(username)  # Call function to save username
-            # Once passwords are accepted, open the blank window
+            # Once passwords are accepted, open the secret questions page
             root.destroy()
-            main_application_window()
+            set_secret_questions_window()
         else:
             feedback_label.configure(text="Passwords Do Not Match", fg_color="red", corner_radius=8)
 
     def save_username(username):
         with open("username.txt", "w") as file:  # Create or overwrite a file to save the username
             file.write(username)
-
 
     def toggle_password_visibility(entry):
         if entry.cget('show') == '':
@@ -114,7 +113,6 @@ def create_main_window():
     # Bind the entry widget to limit the length of input
     username_entry.bind("<KeyRelease>", limit_entry_length(username_entry, max_length))
         
-
     choose_password_label = customtkinter.CTkLabel(username_frame, text="Choose Password:", font = ('Arial', 18))
     choose_password_label.grid(row=1, column=0, padx=20, pady=10)
 
@@ -141,6 +139,127 @@ def create_main_window():
 
     root.mainloop()
 
+def set_secret_questions_window():
+    def save_secret_questions():
+        question1 = entry_question1.get()
+        answer1 = entry_answer1.get()
+        question2 = entry_question2.get()
+        answer2 = entry_answer2.get()
+        if question1 and answer1 and question2 and answer2:
+            with open("secret_questions.txt", "w") as file:
+                file.write(f"Question 1: {question1}\nAnswer 1: {answer1}\n")
+                file.write(f"Question 2: {question2}\nAnswer 2: {answer2}\n")
+            messagebox.showinfo("Success", "Secret questions saved successfully.")
+            secret_questions_window.destroy()
+            main_application_window()
+        else:
+            feedback_label.configure(text="Please fill in all fields", fg_color="red", corner_radius=8)
+
+    secret_questions_window = customtkinter.CTk()
+    secret_questions_window.title("Set Secret Questions")
+    secret_questions_window.after(0, lambda: secret_questions_window.state('zoomed'))
+    customtkinter.set_appearance_mode("dark")
+
+    question1_label = customtkinter.CTkLabel(secret_questions_window, text="Question 1:", font=('Arial', 18))
+    question1_label.place(anchor='c', relx=0.5, rely=0.3)
+    entry_question1 = customtkinter.CTkEntry(secret_questions_window, width=300)
+    entry_question1.place(anchor='c', relx=0.5, rely=0.35)
+
+    answer1_label = customtkinter.CTkLabel(secret_questions_window, text="Answer 1:", font=('Arial', 18))
+    answer1_label.place(anchor='c', relx=0.5, rely=0.4)
+    entry_answer1 = customtkinter.CTkEntry(secret_questions_window, width=300)
+    entry_answer1.place(anchor='c', relx=0.5, rely=0.45)
+
+    question2_label = customtkinter.CTkLabel(secret_questions_window, text="Question 2:", font=('Arial', 18))
+    question2_label.place(anchor='c', relx=0.5, rely=0.5)
+    entry_question2 = customtkinter.CTkEntry(secret_questions_window, width=300)
+    entry_question2.place(anchor='c', relx=0.5, rely=0.55)
+
+    answer2_label = customtkinter.CTkLabel(secret_questions_window, text="Answer 2:", font=('Arial', 18))
+    answer2_label.place(anchor='c', relx=0.5, rely=0.6)
+    entry_answer2 = customtkinter.CTkEntry(secret_questions_window, width=300)
+    entry_answer2.place(anchor='c', relx=0.5, rely=0.65)
+
+    save_button = customtkinter.CTkButton(secret_questions_window, text="Save", command=save_secret_questions, fg_color='#E97451', font=('Arial', 18))
+    save_button.place(anchor='c', relx=0.5, rely=0.7)
+
+    feedback_label = customtkinter.CTkLabel(secret_questions_window, text="", font=('arial', 18))
+    feedback_label.place(anchor='c', relx=0.5, rely=0.75)
+
+    secret_questions_window.mainloop()
+
+def forgot_password_window():
+    def reset_master_password():
+        answer1 = entry_answer1.get()
+        answer2 = entry_answer2.get()
+        if check_secret_answers(answer1, answer2):
+            new_password = entry_new_password.get()
+            confirm_password = entry_confirm_password.get()
+            if new_password == confirm_password:
+                save_master_password(new_password)
+                messagebox.showinfo("Success", "Password reset successfully.")
+                forgot_password.destroy()
+            else:
+                feedback_label.configure(text="Passwords do not match", fg_color="red", corner_radius=8)
+        else:
+            feedback_label.configure(text="Incorrect answers to secret questions", fg_color="red", corner_radius=8)
+
+    def check_secret_answers(answer1, answer2):
+        try:
+            with open("secret_questions.txt", "r") as file:
+                data = file.readlines()
+                saved_answer1 = data[1].split(":")[1].strip()
+                saved_answer2 = data[3].split(":")[1].strip()
+                return answer1 == saved_answer1 and answer2 == saved_answer2
+        except Exception as e:
+            print(e)
+            return False
+
+    forgot_password = customtkinter.CTk()
+    forgot_password.title("Forgot Password")
+    forgot_password.after(0, lambda: forgot_password.state('zoomed'))
+    customtkinter.set_appearance_mode("dark")
+
+    try:
+        with open("secret_questions.txt", "r") as file:
+            data = file.readlines()
+            saved_question1 = data[0].split(":")[1].strip()
+            saved_question2 = data[2].split(":")[1].strip()
+    except Exception as e:
+        print(e)
+        saved_question1 = "Question 1 not set"
+        saved_question2 = "Question 2 not set"
+
+    instruction_label = customtkinter.CTkLabel(forgot_password, text="Answer your secret questions to reset your password", font=('Arial', 18))
+    instruction_label.place(anchor='c', relx=0.5, rely=0.2)
+
+    question1_label = customtkinter.CTkLabel(forgot_password, text=saved_question1, font=('Arial', 18))
+    question1_label.place(anchor='c', relx=0.5, rely=0.3)
+    entry_answer1 = customtkinter.CTkEntry(forgot_password, width=300)
+    entry_answer1.place(anchor='c', relx=0.5, rely=0.35)
+
+    question2_label = customtkinter.CTkLabel(forgot_password, text=saved_question2, font=('Arial', 18))
+    question2_label.place(anchor='c', relx=0.5, rely=0.5)
+    entry_answer2 = customtkinter.CTkEntry(forgot_password, width=300)
+    entry_answer2.place(anchor='c', relx=0.5, rely=0.55)
+
+    new_password_label = customtkinter.CTkLabel(forgot_password, text="New Password:", font=('Arial', 18))
+    new_password_label.place(anchor='c', relx=0.5, rely=0.7)
+    entry_new_password = customtkinter.CTkEntry(forgot_password, width=300, show='•')
+    entry_new_password.place(anchor='c', relx=0.5, rely=0.75)
+
+    confirm_password_label = customtkinter.CTkLabel(forgot_password, text="Confirm Password:", font=('Arial', 18))
+    confirm_password_label.place(anchor='c', relx=0.5, rely=0.8)
+    entry_confirm_password = customtkinter.CTkEntry(forgot_password, width=300, show='•')
+    entry_confirm_password.place(anchor='c', relx=0.5, rely=0.85)
+
+    reset_button = customtkinter.CTkButton(forgot_password, text="Reset Password", command=reset_master_password, fg_color='#E97451', font=('Arial', 18))
+    reset_button.place(anchor='c', relx=0.5, rely=0.9)
+
+    feedback_label = customtkinter.CTkLabel(forgot_password, text="", font=('Arial', 18))
+    feedback_label.place(anchor='c', relx=0.5, rely=0.95)
+
+    forgot_password.mainloop()
 
 def main_application_window():
     # Loading Images
@@ -450,6 +569,21 @@ def create_new_page(root):
     new_page_label = customtkinter.CTkLabel(root, text="Congratulations! Passwords accepted.")
     new_page_label.pack(pady=50)
 
+def check_login(username, password, root):
+    saved_username = None
+    try:
+        with open("username.txt", "r") as file:
+            saved_username = file.read()
+    except FileNotFoundError:
+        pass
+
+    if saved_username == username and load_master_password() == password:
+        messagebox.showinfo("Success", "Login successful!")
+        root.destroy()
+        main_application_window()
+    else:
+        messagebox.showerror("Error", "Invalid username or password")
+
 def login():
     entered_password = entry_password.get()
     master_password = load_master_password()
@@ -478,41 +612,75 @@ def load_username():
 # Check if a master password exists
 master_password = load_master_password()
 if master_password:
-    # If a master password exists, open the login window
-    login_window = customtkinter.CTk()
-    login_window.title('Login Page')
-    login_window.after(0, lambda:login_window.state('zoomed'))
+    root = customtkinter.CTk()
+    root.title('Login Page')
+    root.after(0, lambda: root.state('zoomed'))
     customtkinter.set_appearance_mode("dark")
 
-    # Load the username from the file
-    username = load_username()
+    label1 = customtkinter.CTkLabel(root, text='Login', font=('Arial', 48))
+    label1.pack()
 
-    text_label = customtkinter.CTkLabel(login_window, text= f"Welcome Back, {username}!", text_color='white', font=('Arial', 38, 'bold'))
-    text_label.place(anchor = 'c', relx=0.5, rely =0.3)
+    def toggle_password_visibility(entry):
+        if entry.cget('show') == '':
+            entry.configure(show='•')
+        else:
+            entry.configure(show='')
 
-    login_frame = customtkinter.CTkFrame(login_window)
-    login_frame.place(anchor = 'c', relx=0.5, rely =0.5)
+    def forgot_password():
+        root.destroy()
+        forgot_password_window()
 
-    text_label = customtkinter.CTkLabel(login_frame, text="Login by entering your master password", text_color='white', font=('Arial', 18, 'bold'))
-    text_label.grid(row=2, column=1, pady=10)
+    def limit_entry_length(entry_widget, max_length):
+        def check_length(event):
+            current_text = entry_widget.get()
+            if len(current_text) > max_length:
+                entry_widget.delete(max_length, len(current_text))
+        return check_length
 
-    text_label2 = customtkinter.CTkLabel(login_frame, text="Master Password:", text_color='white', font=('Arial', 16, 'bold'))
-    text_label2.grid(row=3, column=0)
+    max_length = 28
+    username_frame = customtkinter.CTkFrame(root)
+    username_frame.place(anchor='c', relx=0.5, rely=0.45)
 
-    entry_password = customtkinter.CTkEntry(login_frame, show='•', width = 300)
-    entry_password.grid(row=3, column=1, pady=5)
+    choose_username = customtkinter.CTkLabel(username_frame, text="Username:", font=('Arial', 18))
+    choose_username.grid(row=0, column=0, padx=20, pady=10)
+    username_entry = customtkinter.CTkEntry(username_frame, width=200, height=30)
+    username_entry.grid(row=0, column=1, padx=5, pady=10)
+    username_entry.bind("<KeyRelease>", limit_entry_length(username_entry, max_length))
 
-    toggle_button_login = customtkinter.CTkButton(login_frame, image=eye_image, text="", command=lambda: toggle_password_visibility(entry_password), fg_color='#5D3FD3')
-    toggle_button_login.grid(row=3, column=2, padx=5, pady=5)
+    password_label = customtkinter.CTkLabel(username_frame, text="Password:", font=('Arial', 18))
+    password_label.grid(row=1, column=0, padx=20, pady=10)
+    entry_1 = customtkinter.CTkEntry(username_frame, width=200, height=30, show='•')
+    entry_1.grid(row=1, column=1, padx=20, pady=10)
+    toggle_button = customtkinter.CTkButton(username_frame, image=eye_image, text="", command=lambda: toggle_password_visibility(entry_1), fg_color='#E97451')
+    toggle_button.grid(row=1, column=2, padx=20, pady=10)
 
-    button_login = customtkinter.CTkButton(login_frame, text="Login", command=login, fg_color='#5D3FD3', font=('Arial', 14, 'bold'))
-    button_login.grid(row=4, column=1)
+    login_button = customtkinter.CTkButton(root, text="Login", command=lambda: check_login(username_entry.get(), entry_1.get(), root), fg_color='#E97451', font=('Arial', 18))
+    login_button.place(anchor='c', relx=0.5, rely=0.58)
 
-    feedback_label_login = customtkinter.CTkLabel(login_frame, text="", font=('Arial', 14, 'bold'))
-    feedback_label_login.grid(row=5, column=1, padx=5, pady=5)
+    feedback_label = customtkinter.CTkLabel(root, text="", font=('arial', 18))
+    feedback_label.place(anchor='c', relx=0.5, rely=0.63)
+
+    forgot_password_label = customtkinter.CTkLabel(root, text="Forgot Password?", font=('arial', 14), fg_color='blue', corner_radius=8)
+    forgot_password_label.place(anchor='c', relx=0.5, rely=0.7)
+    forgot_password_label.bind("<Button-1>", lambda e: forgot_password())
+
+    root.mainloop()
 
 
-    login_window.mainloop()
+
 else:
     # If no master password exists, open the main window to create one
     create_main_window()
+
+
+
+def save_master_password(password):
+    with open(MASTER_PASSWORD_FILE, "w") as file:
+        file.write(password)
+
+def load_master_password():
+    try:
+        with open(MASTER_PASSWORD_FILE, "r") as file:
+            return file.read()
+    except FileNotFoundError:
+        return None
