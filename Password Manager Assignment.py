@@ -23,6 +23,7 @@ copy_image = customtkinter.CTkImage(Image.open(file_path +
 MASTER_PASSWORD_FILE = "master_password.txt"
 LOGIN_INFO_FILE = "login_info.txt"
 LOGIN_INFO_DIR = "logins"
+USERNAME_FILE = "username.txt"
 
 
 
@@ -197,7 +198,7 @@ def forgot_password_window():
             confirm_password = entry_confirm_password.get()
             if new_password == confirm_password:
                 save_master_password(new_password)
-                messagebox.showinfo("Success", "Password reset successfully.")
+                feedback_label.configure(text="Passwords accepted", fg_color="green", corner_radius=8)
                 forgot_password.destroy()
             else:
                 feedback_label.configure(text="Passwords do not match", fg_color="red", corner_radius=8)
@@ -214,11 +215,20 @@ def forgot_password_window():
         except Exception as e:
             print(e)
             return False
+    
+    def toggle_password_visibility(entry, button):
+        if entry.cget('show') == '•':
+            entry.configure(show='')
+            button.configure(text='Hide')
+        else:
+            entry.configure(show='•')
+            button.configure(text='Show')
 
     forgot_password = customtkinter.CTk()
     forgot_password.title("Forgot Password")
     forgot_password.after(0, lambda: forgot_password.state('zoomed'))
     customtkinter.set_appearance_mode("dark")
+
 
     try:
         with open("secret_questions.txt", "r") as file:
@@ -245,16 +255,22 @@ def forgot_password_window():
 
     new_password_label = customtkinter.CTkLabel(forgot_password, text="New Password:", font=('Arial', 18))
     new_password_label.place(anchor='c', relx=0.5, rely=0.7)
+
     entry_new_password = customtkinter.CTkEntry(forgot_password, width=300, show='•')
     entry_new_password.place(anchor='c', relx=0.5, rely=0.75)
+    toggle_new_password_btn = customtkinter.CTkButton(forgot_password, text="Show", width=50, command=lambda: toggle_password_visibility(entry_new_password, toggle_new_password_btn))
+    toggle_new_password_btn.place(anchor='c', relx=0.73, rely=0.75)
 
     confirm_password_label = customtkinter.CTkLabel(forgot_password, text="Confirm Password:", font=('Arial', 18))
     confirm_password_label.place(anchor='c', relx=0.5, rely=0.8)
     entry_confirm_password = customtkinter.CTkEntry(forgot_password, width=300, show='•')
     entry_confirm_password.place(anchor='c', relx=0.5, rely=0.85)
+    toggle_confirm_password_btn = customtkinter.CTkButton(forgot_password, text="Show", width=50, command=lambda: toggle_password_visibility(entry_confirm_password, toggle_confirm_password_btn))
+    toggle_confirm_password_btn.place(anchor='c', relx=0.73, rely=0.85)
 
     reset_button = customtkinter.CTkButton(forgot_password, text="Reset Password", command=reset_master_password, fg_color='#E97451', font=('Arial', 18))
     reset_button.place(anchor='c', relx=0.5, rely=0.9)
+
 
     feedback_label = customtkinter.CTkLabel(forgot_password, text="", font=('Arial', 18))
     feedback_label.place(anchor='c', relx=0.5, rely=0.95)
@@ -361,19 +377,6 @@ def main_application_window():
 
         accounts_canvas.bind("<Configure>", on_canvas_configure)
 
-
-        # Create a frame inside the canvas
-        accounts_frame = customtkinter.CTkFrame(accounts_canvas, width=400)
-        accounts_canvas.create_window((0, 0), window=accounts_frame, anchor='nw', tags="frame_window")
-
-        def on_canvas_configure(event):
-            # Adjust the frame width to match the canvas width
-            canvas_width = event.width
-            accounts_canvas.itemconfig("frame_window", width=canvas_width)
-            accounts_canvas.config(scrollregion=accounts_canvas.bbox("all"))
-
-        accounts_canvas.bind("<Configure>", on_canvas_configure)
-
         # Add the accounts_label to the frame
         accounts_label = customtkinter.CTkLabel(accounts_frame, text="Saved Logins", font=("Arial", 16, 'bold'))
         accounts_label.pack()
@@ -396,15 +399,16 @@ def main_application_window():
 
     def show_login_details(site_text):
         global accounts_frame, login_details_label, back_button
-        
+
         # Destroy previous accounts_frame if exists
         if accounts_frame:
             accounts_frame.destroy()
 
-        accounts_frame = customtkinter.CTkFrame(main_window)
-        accounts_frame.place(relx=0.68, rely=0.35)
+        # Create a new frame with the same dimensions as view_accounts frame
+        accounts_frame = customtkinter.CTkFrame(main_window, width=400, height=300)
+        accounts_frame.place(relx=0.68, rely=0.35, anchor='nw')
 
-        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Login Details", font=("Arial", 16))
+        accounts_label = customtkinter.CTkLabel(accounts_frame, text="Login Details", font=("Arial", 16, 'bold'))
         accounts_label.pack()
 
         # Find the matching login file
@@ -416,15 +420,15 @@ def main_application_window():
                     login_details_label.pack(anchor=W, padx=20)
 
                     # Back button to return to initial view
-                    back_button = customtkinter.CTkButton(accounts_frame, text="Back", command=back_to_accounts)
+                    back_button = customtkinter.CTkButton(accounts_frame, text="Back", command=view_accounts)
                     back_button.pack(pady=10)
                     break
 
-    def back_to_accounts():
-        global accounts_frame
-        if accounts_frame:
-            accounts_frame.destroy()
-        view_accounts()
+        def back_to_accounts():
+            global accounts_frame
+            if accounts_frame:
+                accounts_frame.destroy()
+            view_accounts()
 
     def add_login_fields():
         nonlocal login_fields_added
@@ -548,6 +552,13 @@ def save_master_password(password):
     with open(MASTER_PASSWORD_FILE, "w") as file:
         file.write(password)
 
+def load_username():
+    try:
+        with open(USERNAME_FILE, "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return None
+
 def load_master_password():
     try:
         with open(MASTER_PASSWORD_FILE, "r") as file:
@@ -570,31 +581,18 @@ def create_new_page(root):
     new_page_label.pack(pady=50)
 
 def check_login(username, password, root):
-    saved_username = None
-    try:
-        with open("username.txt", "r") as file:
-            saved_username = file.read()
-    except FileNotFoundError:
-        pass
-
-    if saved_username == username and load_master_password() == password:
-        messagebox.showinfo("Success", "Login successful!")
-        root.destroy()
-        main_application_window()
-    else:
-        messagebox.showerror("Error", "Invalid username or password")
-
-def login():
-    entered_password = entry_password.get()
     master_password = load_master_password()
-    if entered_password == master_password:
-        # Password correct, open the main window
-        feedback_label_login.configure(text="Accepted", fg_color="green", corner_radius=8)
-        login_window.destroy()
-        main_application_window()
+    username = load_username
+    if username == username and password == master_password:
+        feedback_label.configure(text="Login Successful", fg_color="green", corner_radius=8)
+        # Proceed with successful login actions
+        root.destroy()  # Close the login window
+        main_application_window()  # Open the main window
     else:
-        # Password incorrect, show error message
-        feedback_label_login.configure(text="Incorrect password", fg_color="red", corner_radius=8)
+        feedback_label.configure(text="Invalid Username or Password", fg_color="red", corner_radius=8)
+
+
+
 
 def toggle_password_visibility(entry):
     if entry.cget('show') == '':
@@ -617,8 +615,9 @@ if master_password:
     root.after(0, lambda: root.state('zoomed'))
     customtkinter.set_appearance_mode("dark")
 
-    label1 = customtkinter.CTkLabel(root, text='Login', font=('Arial', 48))
-    label1.pack()
+    label1 = customtkinter.CTkLabel(root, text='Login Here', font=('Arial', 48))
+    label1.place(relx=0.44, rely=0.3)
+
 
     def toggle_password_visibility(entry):
         if entry.cget('show') == '':
@@ -657,12 +656,12 @@ if master_password:
     login_button = customtkinter.CTkButton(root, text="Login", command=lambda: check_login(username_entry.get(), entry_1.get(), root), fg_color='#E97451', font=('Arial', 18))
     login_button.place(anchor='c', relx=0.5, rely=0.58)
 
-    feedback_label = customtkinter.CTkLabel(root, text="", font=('arial', 18))
-    feedback_label.place(anchor='c', relx=0.5, rely=0.63)
-
     forgot_password_label = customtkinter.CTkLabel(root, text="Forgot Password?", font=('arial', 14), fg_color='blue', corner_radius=8)
     forgot_password_label.place(anchor='c', relx=0.5, rely=0.7)
     forgot_password_label.bind("<Button-1>", lambda e: forgot_password())
+
+    feedback_label = customtkinter.CTkLabel(root, text="", font=('Arial', 18))
+    feedback_label.place(anchor='c', relx=0.5, rely=0.65)
 
     root.mainloop()
 
